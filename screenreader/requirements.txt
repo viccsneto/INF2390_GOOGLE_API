@@ -1,0 +1,5 @@
+pyautogui
+gTTS
+google-generativeai
+Pillow
+keyboard
