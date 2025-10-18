@@ -3,3 +3,4 @@ gTTS
 google-generativeai
 Pillow
 keyboard
+playsound 

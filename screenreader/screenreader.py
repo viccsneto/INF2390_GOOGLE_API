@@ -6,32 +6,36 @@ import uuid
 from gtts import gTTS
 import playsound
 import keyboard
-# Configure your API key (replace with your actual key)
-#genai.configure(api_key="AIzaSy************************XlsElsLOs")
+import PIL.Image # <-- ADDED THIS IMPORT
+
+# Configure your API key (replace with your actual key or use environment variable)
+# genai.configure(api_key="AIzaSy************************XlsElsLOs")
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Function to capture the screen
 def capture_screen():
     screenshot = pyautogui.screenshot()
-    # Generate a random temp file using uuid    
+    # Generate a random temp file using uuid
     image_path = f'./temp/screenshot_{uuid.uuid4()}.png'
     
     screenshot.save(image_path)
     return image_path
 
 # Function to send the image to Gemini and get the description
+# --- THIS IS THE CORRECTED FUNCTION ---
 def get_description(image_path):
-    model = genai.GenerativeModel(model_name="gemini-1.5-pro")  # Specify vision-description model
-
-    sample_file = genai.upload_file(path=image_path,
-                            display_name="Screenshot")
+    model = genai.GenerativeModel(model_name="gemini-2.5-flash")
 
     try:
-        # Send request to generate description
-        response = model.generate_content([sample_file, "Descreva a imagem para um deficiente visual com uma resposta curta e objetiva."])
+        # Open the image file using the Pillow library
+        img = PIL.Image.open(image_path)
+        
+        # Send the image object directly with the prompt, instead of uploading it first
+        response = model.generate_content([img, "Você é um especialista em testes de software. Descreva como você prosseguiria para testar este software em termos da próxima ação de input. Se preocupe em tomar apenas uma ação(exemplo, clicar no botão OK, inserir caminho para o arquivo, marcar a checkbox Exibir todos os poços, etc. Ações subsequentes devem ser tomadas em uma nova iteração, com uma nova imagem."])
+        
         return response.text
     except Exception as e:
-        return f"Error: {e}"  # Handle potential errors
+        return f"Error: {e}" # Handle potential errors
 
 # Function to convert text to speech using gTTS
 def text_to_speech(text):
@@ -60,7 +64,7 @@ if __name__ == '__main__':
     print("--------------------------------------------------------------------")
     while True:
         #check if ctrl+shift is pressed
-        if keyboard.is_pressed('ctrl') and keyboard.is_pressed('shift'):            
+        if keyboard.is_pressed('ctrl') and keyboard.is_pressed('shift'):
             text_to_speech("Lendo a tela, por favor aguarde...")
             image_path = capture_screen()
             description = get_description(image_path)
@@ -72,3 +76,5 @@ if __name__ == '__main__':
             print("--------------------------------------------------------------------")
             text_to_speech("O leitor de tela está rodando. Pressione Ctrl+Shift para capturar a tela.")
             print("--------------------------------------------------------------------")
+            # A small delay to prevent multiple rapid captures
+            time.sleep(0.5)
